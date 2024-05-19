@@ -8,9 +8,11 @@ import json
 from mmr import mk8dx_150cc_mmr, get_mmr_from_discord_id
 from mogi_objects import Mogi, Team, Player, Room, VoteView, JoinView, get_tier
 import asyncio
+# from collections import defaultdict
 
 # Scheduled_Event = collections.namedtuple('Scheduled_Event', 'size time started mogi_channel')
 
+# cooldowns = defaultdict(int)
 
 class SquadQueue(commands.Cog):
     def __init__(self, bot):
@@ -237,8 +239,16 @@ class SquadQueue(commands.Cog):
 
     @app_commands.command(name="sub")
     @app_commands.guild_only()
+    @commands.cooldown(1, 300, type=commands.BucketType.user)
     async def sub(self, interaction: discord.Interaction):
         """Sends out a request for a sub in the sub channel. Only works in thread channels for SQ rooms."""
+        # current_time = time.time()
+        # user_cooldown = cooldowns.get(interaction.user.id)
+
+        # if current_time - user_cooldown < 300:  # 5 minutes in seconds (change to what you deem appropriate)
+        #     await interaction.response.send_message(f"You are still on cooldown. Please wait for {int(5 * 60 - (current_time - user_cooldown))} more seconds to use this command again.", ephemeral=True)
+        #     return
+        
         is_room_thread = False
         room = None
         for mogi in self.ongoing_events.values():
@@ -266,6 +276,7 @@ class SquadQueue(commands.Cog):
         await self.SUB_CHANNEL.send(msg, delete_after=self.SUB_MESSAGE_LIFETIME_SECONDS)
         view = JoinView(room, get_mmr_from_discord_id)
         await self.SUB_CHANNEL.send(view=view, delete_after=self.SUB_MESSAGE_LIFETIME_SECONDS)
+        # cooldowns[interaction.user.id] = current_time #Updates cooldown
         await interaction.response.send_message("Sent out request for sub.")
 
     @tasks.loop(minutes=1)

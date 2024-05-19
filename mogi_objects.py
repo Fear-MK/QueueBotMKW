@@ -73,7 +73,9 @@ class Room:
         self.mmr_low = None
         self.view = None
         self.finished = False
-
+    
+    def get_player_list(self):
+        return [player.member.id for team in self.teams for player in team.players]
 
 class Team:
     def __init__(self, players):
@@ -377,7 +379,7 @@ class VoteView(View):
 
 
 class JoinView(View):
-    def __init__(self, room, get_mmr):
+    def __init__(self, room: Room, get_mmr):
         super().__init__(timeout=1200)
         self.room = room
         self.get_mmr = get_mmr
@@ -389,6 +391,10 @@ class JoinView(View):
         if interaction.user.get_role(muted_role_id):
             await interaction.followup.send(
                 "Players with the muted role cannot use the sub button.", ephemeral=True)
+            return
+        if interaction.user.id in self.room.get_player_list():
+            await interaction.followup.send(
+                "You are already in this room.", ephemeral=True)
             return
         try:
             user_mmr = await self.get_mmr(interaction.user.id)
